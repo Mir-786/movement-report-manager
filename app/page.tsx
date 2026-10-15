@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   GripVertical, 
   Trash2, 
@@ -63,8 +63,8 @@ const DEFAULT_STAFF: StaffItem[] = [
   { id: "29", name: "BIPLAB DUTTA", role: "Supervisor" },
   { id: "30", name: "SOUKAT", role: "Driver" },
   { id: "31", name: "SRIMANTA MAHAPATRA", role: "Cook" },
-  { id: "32", name: "RAJU PATRA", role: "Staff" },
-  { id: "33", name: "PURNA MAHATA", role: "Staff" },
+  { id: "32", name: "RAJU PATRA", role: "" },
+  { id: "33", name: "PURNA MAHATA", role: "" },
   { id: "34", name: "MOHAN PATRA", role: "Driver", hasBlackBarAbove: true },
   { id: "35", name: "KHOKAN BERA", role: "Driver" },
   { id: "36", name: "CHANDAN DANDAPATH", role: "Driver" },
@@ -97,7 +97,7 @@ export default function MovementReportApp() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Undo / Redo history state
+  // Undo / Redo history
   const [history, setHistory] = useState<AppSnapshot[]>([
     {
       staff: DEFAULT_STAFF,
@@ -108,7 +108,6 @@ export default function MovementReportApp() {
   ]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
-  // Push new state snapshot to undo/redo history
   const commitSnapshot = (
     newStaff: StaffItem[],
     newCapacity = frontPageCapacity,
@@ -126,7 +125,7 @@ export default function MovementReportApp() {
     setHistoryIndex(truncatedHistory.length);
   };
 
-  // Load saved state from localStorage on initial render
+  // Restore saved state from localStorage
   useEffect(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
@@ -146,7 +145,7 @@ export default function MovementReportApp() {
     }
   }, []);
 
-  // Save state to localStorage
+  // Save state
   const handleSave = () => {
     const stateToSave: AppSnapshot = {
       staff,
@@ -159,7 +158,7 @@ export default function MovementReportApp() {
     setTimeout(() => setSaveSuccess(false), 2500);
   };
 
-  // Undo action
+  // Undo
   const handleUndo = () => {
     if (historyIndex > 0) {
       const targetIndex = historyIndex - 1;
@@ -172,7 +171,7 @@ export default function MovementReportApp() {
     }
   };
 
-  // Redo action
+  // Redo
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const targetIndex = historyIndex + 1;
@@ -185,7 +184,7 @@ export default function MovementReportApp() {
     }
   };
 
-  // Keyboard shortcut listener (Ctrl+Z, Ctrl+Y, Ctrl+S)
+  // Keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -236,7 +235,7 @@ export default function MovementReportApp() {
       {
         id: Date.now().toString(),
         name: newName.trim().toUpperCase(),
-        role: newRole.trim() || "Staff",
+        role: newRole.trim(),
         hasBlackBarAbove: false
       }
     ];
@@ -253,18 +252,17 @@ export default function MovementReportApp() {
     commitSnapshot(updated);
   };
 
-  // Inline update for Name / Role
+  // Inline editing
   const handleUpdate = (id: string, field: "name" | "role", value: string) => {
     const updated = staff.map((s) => (s.id === id ? { ...s, [field]: value } : s));
     setStaff(updated);
   };
 
-  // Commit text editing on blur
   const handleBlurCommit = () => {
     commitSnapshot(staff);
   };
 
-  // Toggle black divider bar above row
+  // Toggle black bar
   const toggleBlackBar = (id: string) => {
     const updated = staff.map((s) =>
       s.id === id ? { ...s, hasBlackBarAbove: !s.hasBlackBarAbove } : s
@@ -282,7 +280,7 @@ export default function MovementReportApp() {
     commitSnapshot(DEFAULT_STAFF, 30, "", "");
   };
 
-  // Split items between Page 1 and Page 2
+  // Slicing staff for Page 1 & Page 2
   const page1Items = staff.slice(0, frontPageCapacity);
   const page2Items = staff.slice(frontPageCapacity);
 
@@ -307,17 +305,31 @@ export default function MovementReportApp() {
               <th className="no-print border-r border-black p-0 bg-slate-100"></th>
               <th colSpan={2} className="border-r border-black p-1 bg-transparent"></th>
               <th colSpan={4} className="border-r border-black text-left px-2 py-1">
-                DAY: <span className="font-semibold underline ml-1">{reportDay || "......................."}</span>
+                DAY:{" "}
+                <input
+                  type="text"
+                  value={reportDay}
+                  onChange={(e) => setReportDay(e.target.value.toUpperCase())}
+                  onBlur={handleBlurCommit}
+                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1"
+                />
               </th>
               <th colSpan={4} className="border-r border-black text-left px-2 py-1">
-                DATE: <span className="font-semibold underline ml-1">{reportDate || "......................."}</span>
+                DATE:{" "}
+                <input
+                  type="text"
+                  value={reportDate}
+                  onChange={(e) => setReportDate(e.target.value)}
+                  onBlur={handleBlurCommit}
+                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1"
+                />
               </th>
               <th className="no-print border-l border-black p-0 bg-slate-100"></th>
             </tr>
           </>
         )}
 
-        {/* Column Headers (Present on both Page 1 and Page 2) */}
+        {/* Column Headers */}
         <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center text-black">
           <th className="no-print w-7 border-r border-black p-1">#</th>
           <th className="w-10 border-r border-black p-1">Sl. No</th>
@@ -336,6 +348,8 @@ export default function MovementReportApp() {
       <tbody>
         {items.map((item, localIndex) => {
           const globalIndex = startIndex + localIndex;
+          const trimmedRole = item.role.trim();
+
           return (
             <React.Fragment key={item.id}>
               {/* Solid Black Divider Row */}
@@ -368,10 +382,12 @@ export default function MovementReportApp() {
                   {globalIndex + 1}
                 </td>
 
-                {/* Name & Role: 2 leading spaces + tight parentheses like (Driver) */}
+                {/* Name & Role: 2 non-breaking spaces starting + tight bracket when role exists */}
                 <td className="border-r border-black px-1.5 py-0.5 font-semibold text-black">
                   <div className="flex items-center text-[10.5px]">
+                    {/* 2 spaces starting of name */}
                     <span className="select-none font-mono whitespace-pre">&nbsp;&nbsp;</span>
+                    
                     <input
                       type="text"
                       value={item.name}
@@ -379,21 +395,37 @@ export default function MovementReportApp() {
                       onBlur={handleBlurCommit}
                       className="w-full bg-transparent outline-none focus:bg-amber-100 uppercase font-semibold"
                     />
-                    <span className="font-normal text-slate-700 print:text-black whitespace-nowrap">
-                      (
-                      <input
-                        type="text"
-                        value={item.role.trim()}
-                        onChange={(e) => handleUpdate(item.id, "role", e.target.value.trim())}
-                        onBlur={handleBlurCommit}
-                        className="w-16 inline bg-transparent outline-none focus:bg-amber-100 text-center font-normal"
-                      />
-                      )
-                    </span>
+
+                    {/* Tight brackets with no spaces, hidden entirely if role is blank */}
+                    {trimmedRole !== "" ? (
+                      <span className="font-normal text-slate-800 print:text-black whitespace-nowrap inline-flex items-center">
+                        (
+                        <input
+                          type="text"
+                          value={trimmedRole}
+                          onChange={(e) => handleUpdate(item.id, "role", e.target.value.trim())}
+                          onBlur={handleBlurCommit}
+                          className="inline bg-transparent outline-none focus:bg-amber-100 text-center font-normal p-0 m-0 border-none w-16"
+                        />
+                        )
+                      </span>
+                    ) : (
+                      /* Screen-only placeholder to allow typing a role if blank */
+                      <span className="no-print opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <input
+                          type="text"
+                          placeholder="+role"
+                          value={item.role}
+                          onChange={(e) => handleUpdate(item.id, "role", e.target.value.trim())}
+                          onBlur={handleBlurCommit}
+                          className="w-12 text-[9px] bg-slate-100 rounded px-1 outline-none text-center"
+                        />
+                      </span>
+                    )}
                   </div>
                 </td>
 
-                {/* Check-in Blank Cells */}
+                {/* Blank Time Slot Cells */}
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
@@ -440,6 +472,7 @@ export default function MovementReportApp() {
     <div className="min-h-screen py-6 px-3 sm:px-6 max-w-5xl mx-auto">
       {/* ================= CONTROLS (NO-PRINT) ================= */}
       <div className="no-print bg-white p-5 rounded-2xl shadow-lg border border-slate-200 mb-8 space-y-4">
+        {/* Top bar: title + undo, redo, save, reset, print */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h1 className="text-lg font-black text-slate-800 tracking-wide uppercase flex items-center gap-2">
@@ -452,7 +485,6 @@ export default function MovementReportApp() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Undo / Redo buttons */}
             <button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
@@ -478,7 +510,6 @@ export default function MovementReportApp() {
               <Redo2 className="w-4 h-4" />
             </button>
 
-            {/* Save Button */}
             <button
               onClick={handleSave}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-sm ${
@@ -499,7 +530,6 @@ export default function MovementReportApp() {
               )}
             </button>
 
-            {/* Reset Button */}
             <button
               onClick={handleReset}
               className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1 transition"
@@ -507,7 +537,6 @@ export default function MovementReportApp() {
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>
 
-            {/* Print Button */}
             <button
               onClick={() => window.print()}
               className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow flex items-center gap-1.5 transition"
@@ -574,60 +603,37 @@ export default function MovementReportApp() {
           </div>
         </div>
 
-        {/* Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Day</label>
+        {/* Add Staff Form (Day & Date filling boxes removed) */}
+        <form onSubmit={handleAddStaff} className="flex flex-wrap items-end gap-3 pt-1">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-bold text-slate-600 mb-1">Name of Person</label>
             <input
               type="text"
-              placeholder="e.g. MONDAY"
-              value={reportDay}
-              onChange={(e) => setReportDay(e.target.value.toUpperCase())}
-              onBlur={handleBlurCommit}
+              placeholder="Full Name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-medium"
+            />
+          </div>
+          <div className="w-44">
+            <label className="block text-xs font-bold text-slate-600 mb-1">
+              Role <span className="text-[10px] font-normal text-slate-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Driver"
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
               className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Date</label>
-            <input
-              type="text"
-              placeholder="e.g. 15-10-2026"
-              value={reportDate}
-              onChange={(e) => setReportDate(e.target.value)}
-              onBlur={handleBlurCommit}
-              className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <form onSubmit={handleAddStaff} className="md:col-span-2 flex items-end gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Name of Person</label>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
-              />
-            </div>
-            <div className="w-32">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Role</label>
-              <input
-                type="text"
-                placeholder="e.g. Driver"
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-bold flex items-center gap-1 transition"
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Add
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition"
+          >
+            <UserPlus className="w-3.5 h-3.5" /> Add Staff
+          </button>
+        </form>
       </div>
 
       {/* ================= PRINTABLE DOCUMENT ================= */}
@@ -648,7 +654,7 @@ export default function MovementReportApp() {
             </h1>
           </div>
 
-          {/* Page 1 Table (With MOVEMENT REPORT and DAY/DATE Header Rows) */}
+          {/* Page 1 Table (MOVEMENT REPORT and DAY/DATE Header Rows) */}
           {renderTable(page1Items, 0, true)}
 
           <div className="no-print mt-3 text-right text-[11px] text-slate-400 font-semibold">
@@ -659,7 +665,7 @@ export default function MovementReportApp() {
         {/* ================= PAGE 2 (CONT.) ================= */}
         {page2Items.length > 0 && (
           <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
-            {/* Directly begins with table headers (no school name, no dotted half box, no Movement Report row) */}
+            {/* Directly begins with column headers */}
             {renderTable(page2Items, frontPageCapacity, false)}
 
             <div className="no-print mt-3 text-right text-[11px] text-slate-400 font-semibold">
