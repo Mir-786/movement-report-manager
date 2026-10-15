@@ -541,7 +541,7 @@ export default function MovementReportApp() {
                 </>
               ) : (
                 <>
-                  <Server className="w-3.5 h-3.5" /> Save to Server
+                  <Server className="w-3.5 h-3.5" /> Save
                 </>
               )}
             </button>
