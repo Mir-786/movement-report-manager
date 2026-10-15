@@ -95,7 +95,6 @@ export default function MovementReportApp() {
   const [newRole, setNewRole] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Server sync indicators
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -127,7 +126,7 @@ export default function MovementReportApp() {
     setHistoryIndex(truncatedHistory.length);
   };
 
-  // Load latest state directly from server on startup
+  // Load from server
   useEffect(() => {
     async function loadFromServer() {
       try {
@@ -149,7 +148,7 @@ export default function MovementReportApp() {
     loadFromServer();
   }, []);
 
-  // Save latest work to server
+  // Save to server
   const handleSaveToServer = async () => {
     setIsSaving(true);
     try {
@@ -202,7 +201,7 @@ export default function MovementReportApp() {
     }
   };
 
-  // Keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S)
+  // Shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -225,7 +224,7 @@ export default function MovementReportApp() {
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
-  // Drag and Drop
+  // Drag and drop
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
@@ -289,7 +288,6 @@ export default function MovementReportApp() {
     commitSnapshot(updated);
   };
 
-  // Reset
   const handleReset = () => {
     setStaff(DEFAULT_STAFF);
     setFrontPageCapacity(30);
@@ -303,24 +301,24 @@ export default function MovementReportApp() {
 
   // Render Table
   const renderTable = (items: StaffItem[], startIndex: number, isFirstPage: boolean) => (
-    <table className="w-full border-collapse border-[1.5px] border-black text-[10.5px] font-sans">
+    <table className="w-full border-collapse border-[1.5px] border-black text-[12.5px] font-sans print:border-l-0 print:border-r-0">
       <thead>
-        {/* Only 1st page renders MOVEMENT REPORT and DAY/DATE header rows */}
+        {/* Row 1: MOVEMENT REPORT Header */}
         {isFirstPage && (
           <>
             <tr className="border-b-[1.5px] border-black">
               <th className="no-print border-r border-black p-0 w-7 bg-slate-100"></th>
               <th
                 colSpan={10}
-                className="border-r border-black text-center font-black tracking-widest text-sm py-1 uppercase text-black"
+                className="border-r border-black text-center font-black tracking-widest text-base py-1 uppercase text-black print-no-border-l print-no-border-r"
               >
                 MOVEMENT REPORT
               </th>
               <th className="no-print border-l border-black p-0 w-16 bg-slate-100"></th>
             </tr>
-            <tr className="border-b-[1.5px] border-black text-xs font-bold text-black">
+            <tr className="border-b-[1.5px] border-black text-sm font-bold text-black">
               <th className="no-print border-r border-black p-0 bg-slate-100"></th>
-              <th colSpan={2} className="border-r border-black p-1 bg-transparent"></th>
+              <th colSpan={2} className="border-r border-black p-1 bg-transparent print-no-border-l"></th>
               <th colSpan={4} className="border-r border-black text-left px-2 py-1">
                 DAY:{" "}
                 <input
@@ -328,17 +326,17 @@ export default function MovementReportApp() {
                   value={reportDay}
                   onChange={(e) => setReportDay(e.target.value.toUpperCase())}
                   onBlur={handleBlurCommit}
-                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1"
+                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1 text-sm"
                 />
               </th>
-              <th colSpan={4} className="border-r border-black text-left px-2 py-1">
+              <th colSpan={4} className="border-r border-black text-left px-2 py-1 print-no-border-r">
                 DATE:{" "}
                 <input
                   type="text"
                   value={reportDate}
                   onChange={(e) => setReportDate(e.target.value)}
                   onBlur={handleBlurCommit}
-                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1"
+                  className="bg-transparent outline-none font-normal w-32 focus:bg-amber-100 text-black border-none p-0 ml-1 text-sm"
                 />
               </th>
               <th className="no-print border-l border-black p-0 bg-slate-100"></th>
@@ -346,10 +344,10 @@ export default function MovementReportApp() {
           </>
         )}
 
-        {/* Column Headers (Reduced Name of Person column size) */}
-        <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center text-black">
+        {/* Column Headers */}
+        <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center text-black text-[12.5px]">
           <th className="no-print w-7 border-r border-black p-1">#</th>
-          <th className="w-10 border-r border-black p-1">Sl. No</th>
+          <th className="w-10 border-r border-black p-1 print-no-border-l">Sl. No</th>
           <th className="w-48 sm:w-52 border-r border-black p-1 text-left px-2">Name of Person</th>
           <th className="w-12 border-r border-black p-1">In Time</th>
           <th className="w-12 border-r border-black p-1">Out Time</th>
@@ -358,7 +356,7 @@ export default function MovementReportApp() {
           <th className="w-12 border-r border-black p-1">In Time</th>
           <th className="w-12 border-r border-black p-1">Out Time</th>
           <th className="w-10 border-r border-black p-1">In</th>
-          <th className="w-10 border-black p-1">Out</th>
+          <th className="w-10 border-black p-1 print-no-border-r">Out</th>
           <th className="no-print w-16 border-l border-black p-1">Action</th>
         </tr>
       </thead>
@@ -373,7 +371,7 @@ export default function MovementReportApp() {
               {item.hasBlackBarAbove && (
                 <tr className="black-divider-row bg-black h-3.5 print:h-3">
                   <td className="no-print bg-black border border-black p-0 h-3.5"></td>
-                  <td colSpan={10} className="bg-black border border-black p-0 h-3.5"></td>
+                  <td colSpan={10} className="bg-black border border-black p-0 h-3.5 print-no-border-l print-no-border-r"></td>
                   <td className="no-print bg-black border border-black p-0 h-3.5"></td>
                 </tr>
               )}
@@ -395,13 +393,13 @@ export default function MovementReportApp() {
                 </td>
 
                 {/* Auto Sequence Serial Number */}
-                <td className="border-r border-black text-center font-bold p-1 text-black">
+                <td className="border-r border-black text-center font-bold p-1 text-black text-[12.5px] print-no-border-l">
                   {globalIndex + 1}
                 </td>
 
-                {/* Name & Role: 2 spaces start of name, tight brackets, space on right side */}
+                {/* Name & Role */}
                 <td className="border-r border-black px-1.5 py-0.5 font-semibold text-black">
-                  <div className="flex items-center text-[10.5px]">
+                  <div className="flex items-center text-[12.5px]">
                     {/* 2 spaces starting of name */}
                     <span className="select-none font-mono whitespace-pre">&nbsp;&nbsp;</span>
                     
@@ -410,24 +408,32 @@ export default function MovementReportApp() {
                       value={item.name}
                       onChange={(e) => handleUpdate(item.id, "name", e.target.value)}
                       onBlur={handleBlurCommit}
-                      className="w-full bg-transparent outline-none focus:bg-amber-100 uppercase font-semibold"
+                      className="w-full bg-transparent outline-none focus:bg-amber-100 uppercase font-semibold text-[12.5px]"
                     />
 
-                    {/* Bracket tightly touches role text, with space on the right side */}
+                    {/* Bracket tightly touches role with zero inner space, and mr-8 gap on right */}
                     {trimmedRole !== "" ? (
-                      <span className="font-normal text-slate-800 print:text-black whitespace-nowrap inline-flex items-center mr-2">
-                        ({trimmedRole})
-                      </span>
+                      <div className="font-normal text-slate-800 print:text-black whitespace-nowrap inline-flex items-center mr-8 tracking-tight">
+                        <span className="select-none">(</span>
+                        <input
+                          type="text"
+                          value={trimmedRole}
+                          onChange={(e) => handleUpdate(item.id, "role", e.target.value.trim())}
+                          onBlur={handleBlurCommit}
+                          className="bg-transparent outline-none focus:bg-amber-100 text-center font-normal p-0 m-0 border-none w-16 text-[12px] print:hidden"
+                        />
+                        <span className="hidden print:inline">{trimmedRole}</span>
+                        <span className="select-none">)</span>
+                      </div>
                     ) : (
-                      /* Screen-only toggle to add a role if blank */
-                      <span className="no-print opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity mr-2">
+                      <span className="no-print opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity mr-8">
                         <input
                           type="text"
                           placeholder="+role"
                           value={item.role}
                           onChange={(e) => handleUpdate(item.id, "role", e.target.value.trim())}
                           onBlur={handleBlurCommit}
-                          className="w-12 text-[9px] bg-slate-100 rounded px-1 outline-none text-center"
+                          className="w-12 text-[10px] bg-slate-100 rounded px-1 outline-none text-center"
                         />
                       </span>
                     )}
@@ -442,7 +448,7 @@ export default function MovementReportApp() {
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
-                <td className="border-black h-7"></td>
+                <td className="border-black h-7 print-no-border-r"></td>
 
                 {/* Actions */}
                 <td className="no-print border-l border-black p-1 text-center">
@@ -494,7 +500,6 @@ export default function MovementReportApp() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Undo / Redo */}
             <button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
@@ -541,12 +546,11 @@ export default function MovementReportApp() {
                 </>
               ) : (
                 <>
-                  <Server className="w-3.5 h-3.5" /> Save
+                  <Server className="w-3.5 h-3.5" /> Save to Server
                 </>
               )}
             </button>
 
-            {/* Reset */}
             <button
               onClick={handleReset}
               className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1 transition"
@@ -554,7 +558,6 @@ export default function MovementReportApp() {
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>
 
-            {/* Export */}
             <button
               onClick={() => window.print()}
               className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow flex items-center gap-1.5 transition"
@@ -659,15 +662,15 @@ export default function MovementReportApp() {
         
         {/* ================= PAGE 1 ================= */}
         <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
-          {/* Box around 1st Half and 2nd Half (Page 1 Only) */}
-          <div className="border-[1.5px] border-black px-3 py-1.5 flex justify-between items-center text-xs font-bold text-black mb-3">
+          {/* Box around 1st Half and 2nd Half (Left & right borders removed in print) */}
+          <div className="half-box border-[1.5px] border-black px-3 py-1.5 flex justify-between items-center text-sm font-bold text-black mb-3 print:border-l-0 print:border-r-0">
             <span>1st Half....................................................</span>
             <span>2nd Half......................................................</span>
           </div>
 
-          {/* School Name (Page 1 Only) */}
+          {/* School Name */}
           <div className="text-center mb-2">
-            <h1 className="text-xl sm:text-2xl font-black tracking-widest text-black uppercase">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-widest text-black uppercase">
               KHARAGPUR VISION ACADEMY
             </h1>
           </div>
@@ -680,10 +683,9 @@ export default function MovementReportApp() {
           </div>
         </section>
 
-        {/* ================= PAGE 2 ================= */}
+        {/* ================= PAGE 2 (CONT.) ================= */}
         {page2Items.length > 0 && (
           <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
-            {/* Directly begins with column headers */}
             {renderTable(page2Items, frontPageCapacity, false)}
 
             <div className="no-print mt-3 text-right text-[11px] text-slate-400 font-semibold">

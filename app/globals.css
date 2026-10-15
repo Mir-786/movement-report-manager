@@ -11,8 +11,8 @@
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 10px !important;
-    line-height: 1.15 !important;
+    font-size: 12px !important; /* Increased by 2px */
+    line-height: 1.2 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -31,19 +31,39 @@
     break-after: auto !important;
   }
 
+  /* Remove 2px border from left and right side of the table */
   table {
     width: 100% !important;
     border-collapse: collapse !important;
+    border-left: none !important;
+    border-right: none !important;
   }
 
   th, td {
-    border: 1.2px solid #000000 !important;
-    padding: 2.5px 3px !important;
+    border-top: 1.2px solid #000000 !important;
+    border-bottom: 1.2px solid #000000 !important;
+    border-left: 1.2px solid #000000 !important;
+    border-right: 1.2px solid #000000 !important;
+    padding: 3px 3px !important;
+  }
+
+  /* Specific classes to remove outer left and right borders */
+  .print-no-border-l {
+    border-left: none !important;
+  }
+
+  .print-no-border-r {
+    border-right: none !important;
+  }
+
+  .half-box {
+    border-left: none !important;
+    border-right: none !important;
   }
 
   .black-divider-row td {
     background-color: #000000 !important;
     border-color: #000000 !important;
-    height: 12px !important;
+    height: 14px !important;
   }
 }
