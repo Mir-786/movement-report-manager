@@ -5,7 +5,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm 7mm;
+    margin: 8mm 6mm;
   }
 
   body {
@@ -24,7 +24,6 @@
   .print-page {
     page-break-after: always !important;
     break-after: page !important;
-    min-height: 100vh;
   }
 
   .print-page:last-child {
@@ -45,6 +44,6 @@
   .black-divider-row td {
     background-color: #000000 !important;
     border-color: #000000 !important;
-    height: 14px !important;
+    height: 12px !important;
   }
 }

@@ -10,7 +10,7 @@ import {
   Layers, 
   MinusCircle, 
   PlusCircle,
-  Split
+  Building2 
 } from "lucide-react";
 
 interface StaffItem {
@@ -135,25 +135,51 @@ export default function MovementReportApp() {
     );
   };
 
-  // Pagination slicing
+  // Split staff between Page 1 and Page 2
   const page1Items = staff.slice(0, frontPageCapacity);
   const page2Items = staff.slice(frontPageCapacity);
 
   const renderTable = (items: StaffItem[], startIndex: number) => (
     <table className="w-full border-collapse border-[1.5px] border-black text-[10.5px] font-sans">
       <thead>
-        <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center">
+        {/* Row 1: MOVEMENT REPORT Header */}
+        <tr className="border-b-[1.5px] border-black">
+          <th className="no-print border-r border-black p-0 w-7 bg-slate-100"></th>
+          <th
+            colSpan={10}
+            className="border-r border-black text-center font-black tracking-widest text-sm py-1 uppercase text-black"
+          >
+            MOVEMENT REPORT
+          </th>
+          <th className="no-print border-l border-black p-0 w-16 bg-slate-100"></th>
+        </tr>
+
+        {/* Row 2: DAY and DATE exactly as the reference */}
+        <tr className="border-b-[1.5px] border-black text-xs font-bold text-black">
+          <th className="no-print border-r border-black p-0 bg-slate-100"></th>
+          <th colSpan={2} className="border-r border-black p-1 bg-transparent"></th>
+          <th colSpan={4} className="border-r border-black text-left px-2 py-1">
+            DAY: <span className="font-semibold underline ml-1">{reportDay || "......................."}</span>
+          </th>
+          <th colSpan={4} className="border-r border-black text-left px-2 py-1">
+            DATE: <span className="font-semibold underline ml-1">{reportDate || "......................."}</span>
+          </th>
+          <th className="no-print border-l border-black p-0 bg-slate-100"></th>
+        </tr>
+
+        {/* Row 3: Column Headers */}
+        <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center text-black">
           <th className="no-print w-7 border-r border-black p-1">#</th>
           <th className="w-10 border-r border-black p-1">Sl. No</th>
           <th className="w-56 sm:w-64 border-r border-black p-1 text-left px-2">Name of Person</th>
-          <th className="w-12 border-r border-black p-1 text-center">In Time</th>
-          <th className="w-12 border-r border-black p-1 text-center">Out Time</th>
-          <th className="w-12 border-r border-black p-1 text-center">In Time</th>
-          <th className="w-12 border-r border-black p-1 text-center">Out Time</th>
-          <th className="w-12 border-r border-black p-1 text-center">In Time</th>
-          <th className="w-12 border-r border-black p-1 text-center">Out Time</th>
-          <th className="w-10 border-r border-black p-1 text-center">In</th>
-          <th className="w-10 border-black p-1 text-center">Out</th>
+          <th className="w-12 border-r border-black p-1">In Time</th>
+          <th className="w-12 border-r border-black p-1">Out Time</th>
+          <th className="w-12 border-r border-black p-1">In Time</th>
+          <th className="w-12 border-r border-black p-1">Out Time</th>
+          <th className="w-12 border-r border-black p-1">In Time</th>
+          <th className="w-12 border-r border-black p-1">Out Time</th>
+          <th className="w-10 border-r border-black p-1">In</th>
+          <th className="w-10 border-black p-1">Out</th>
           <th className="no-print w-16 border-l border-black p-1">Action</th>
         </tr>
       </thead>
@@ -164,8 +190,10 @@ export default function MovementReportApp() {
             <React.Fragment key={item.id}>
               {/* Solid Black Divider Row */}
               {item.hasBlackBarAbove && (
-                <tr className="black-divider-row bg-black h-4 print:h-3">
-                  <td colSpan={12} className="bg-black border border-black p-0 h-4"></td>
+                <tr className="black-divider-row bg-black h-3.5 print:h-3">
+                  <td className="no-print bg-black border border-black p-0 h-3.5"></td>
+                  <td colSpan={10} className="bg-black border border-black p-0 h-3.5"></td>
+                  <td className="no-print bg-black border border-black p-0 h-3.5"></td>
                 </tr>
               )}
 
@@ -212,7 +240,7 @@ export default function MovementReportApp() {
                   </div>
                 </td>
 
-                {/* Empty check-in boxes matching original */}
+                {/* Blank Time Slot Cells */}
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
                 <td className="border-r border-black h-7"></td>
@@ -222,13 +250,13 @@ export default function MovementReportApp() {
                 <td className="border-r border-black h-7"></td>
                 <td className="border-black h-7"></td>
 
-                {/* Action buttons (hidden on print) */}
+                {/* Actions */}
                 <td className="no-print border-l border-black p-1 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button
                       type="button"
                       onClick={() => toggleBlackBar(item.id)}
-                      title="Toggle black separator bar above this row"
+                      title="Toggle black divider above this row"
                       className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${
                         item.hasBlackBarAbove
                           ? "bg-black text-white border-black"
@@ -257,16 +285,16 @@ export default function MovementReportApp() {
 
   return (
     <div className="min-h-screen py-6 px-3 sm:px-6 max-w-5xl mx-auto">
-      {/* ================= CONTROL PANEL (NO-PRINT) ================= */}
+      {/* ================= CONTROLS (NO-PRINT) ================= */}
       <div className="no-print bg-white p-5 rounded-2xl shadow-lg border border-slate-200 mb-8 space-y-4">
-        {/* Top Header & Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h1 className="text-lg font-black text-slate-800 tracking-wide uppercase">
+            <h1 className="text-lg font-black text-slate-800 tracking-wide uppercase flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-indigo-600" />
               Kharagpur Vision Academy Movement Report
             </h1>
             <p className="text-xs text-slate-500">
-              Drag rows to reorder. Serial numbers adjust sequentially.
+              Drag rows to reorder. Serial numbers adjust automatically.
             </p>
           </div>
 
@@ -275,7 +303,7 @@ export default function MovementReportApp() {
               onClick={() => setStaff(INITIAL_STAFF)}
               className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1 transition"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset
+              <RotateCcw className="w-3.5 h-3.5" /> Reset Default
             </button>
             <button
               onClick={() => window.print()}
@@ -286,7 +314,7 @@ export default function MovementReportApp() {
           </div>
         </div>
 
-        {/* Feature: Front Page Staff Count & Statistics */}
+        {/* Feature: Front Page Staff Count */}
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
@@ -297,7 +325,7 @@ export default function MovementReportApp() {
                 Front Page Capacity
               </span>
               <span className="text-[11px] text-slate-500">
-                Number of staff to fit onto Page 1 before breaking to Page 2
+                Set how many staff rows fit on the first page
               </span>
             </div>
           </div>
@@ -321,7 +349,6 @@ export default function MovementReportApp() {
               </button>
             </div>
 
-            {/* Badges */}
             <div className="flex items-center gap-2 text-xs font-semibold">
               <span className="px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-700 shadow-sm">
                 Total: <strong className="text-indigo-600 font-bold">{staff.length}</strong>
@@ -336,7 +363,7 @@ export default function MovementReportApp() {
           </div>
         </div>
 
-        {/* Date, Day, and Add Staff row */}
+        {/* Inputs */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1">Day</label>
@@ -390,91 +417,50 @@ export default function MovementReportApp() {
         </div>
       </div>
 
-      {/* ================= PRINTABLE DOCUMENT (A4 SAME-TO-SAME) ================= */}
+      {/* ================= PRINTABLE DOCUMENT ================= */}
       <div className="space-y-10 print:space-y-0">
         
-        {/* ================= PAGE 1 (FRONT PAGE) ================= */}
-        <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0 relative">
-          {/* Circular Stamp Graphic (Top-Left) */}
-          <div className="absolute top-5 left-5 w-24 h-24 border-[3px] border-black rounded-full flex flex-col items-center justify-center p-1 text-center font-black select-none pointer-events-none opacity-90 rotate-[-12deg]">
-            <span className="text-[6.5px] leading-tight tracking-wider uppercase">Vision Educational Trust</span>
-            <span className="text-[10px] font-extrabold my-0.5">KVA</span>
-            <span className="text-[6px] tracking-tight">KHARAGPUR</span>
-          </div>
-
-          {/* Dotted Half indicators */}
-          <div className="flex justify-between text-[11px] font-bold text-black mb-1">
+        {/* ================= PAGE 1 ================= */}
+        <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
+          {/* Box around 1st Half and 2nd Half */}
+          <div className="border-[1.5px] border-black px-3 py-1.5 flex justify-between items-center text-xs font-bold text-black mb-3">
             <span>1st Half....................................................</span>
             <span>2nd Half......................................................</span>
           </div>
 
-          {/* Main Title Block */}
-          <div className="text-center my-2">
+          {/* School Name */}
+          <div className="text-center mb-2">
             <h1 className="text-xl sm:text-2xl font-black tracking-widest text-black uppercase">
               KHARAGPUR VISION ACADEMY
             </h1>
-            <div className="inline-block border-b-2 border-black font-extrabold text-sm sm:text-base tracking-widest uppercase mt-0.5">
-              MOVEMENT REPORT
-            </div>
           </div>
 
-          {/* Day & Date Headers */}
-          <div className="flex justify-between items-center text-xs font-extrabold uppercase mb-2 px-1 text-black">
-            <div>
-              DAY: <span className="font-semibold underline ml-1">{reportDay || "......................."}</span>
-            </div>
-            <div>
-              DATE: <span className="font-semibold underline ml-1">{reportDate || "......................."}</span>
-            </div>
-          </div>
-
-          {/* Page 1 Table */}
+          {/* Page 1 Table (includes MOVEMENT REPORT, DAY, and DATE inside header rows) */}
           {renderTable(page1Items, 0)}
 
-          {/* Page indicator on screen */}
           <div className="no-print mt-3 text-right text-[11px] text-slate-400 font-semibold">
             Front Page (Rows 1 to {page1Items.length})
           </div>
         </section>
 
-        {/* ================= PAGE 2 (BACK PAGE) ================= */}
+        {/* ================= PAGE 2 ================= */}
         {page2Items.length > 0 && (
-          <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0 relative">
-            {/* Header Repeat on Page 2 */}
-            <div className="flex justify-between text-[11px] font-bold text-black mb-1">
+          <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
+            {/* Box around 1st Half and 2nd Half on Page 2 */}
+            <div className="border-[1.5px] border-black px-3 py-1.5 flex justify-between items-center text-xs font-bold text-black mb-3">
               <span>1st Half....................................................</span>
               <span>2nd Half......................................................</span>
             </div>
 
-            <div className="text-center my-2">
+            {/* School Name */}
+            <div className="text-center mb-2">
               <h2 className="text-xl sm:text-2xl font-black tracking-widest text-black uppercase">
                 KHARAGPUR VISION ACADEMY
               </h2>
-              <div className="inline-block border-b-2 border-black font-extrabold text-sm sm:text-base tracking-widest uppercase mt-0.5">
-                MOVEMENT REPORT (CONT.)
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center text-xs font-extrabold uppercase mb-2 px-1 text-black">
-              <div>
-                DAY: <span className="font-semibold underline ml-1">{reportDay || "......................."}</span>
-              </div>
-              <div>
-                DATE: <span className="font-semibold underline ml-1">{reportDate || "......................."}</span>
-              </div>
             </div>
 
             {/* Page 2 Table */}
             {renderTable(page2Items, frontPageCapacity)}
-
-            {/* Bottom-Right Stamp Seal */}
-            <div className="flex justify-end mt-6 pr-4">
-              <div className="w-28 h-28 border-[3.5px] border-black rounded-full flex flex-col items-center justify-center p-1.5 text-center font-black select-none pointer-events-none opacity-85 rotate-[15deg]">
-                <span className="text-[6.5px] leading-none uppercase">Kharagpur Vision Academy</span>
-                <span className="text-[7px] font-bold my-1 text-center">ENGLISH MEDIUM SCHOOL</span>
-                <span className="text-[6.5px]">SADATPUR</span>
-              </div>
-            </div>
 
             <div className="no-print mt-3 text-right text-[11px] text-slate-400 font-semibold">
               Page 2 (Rows {frontPageCapacity + 1} to {staff.length})
