@@ -11,11 +11,14 @@ import {
   MinusCircle, 
   PlusCircle,
   Building2,
+  HardDrive,
   Server,
   Undo2,
   Redo2,
   Check,
-  Loader2
+  Loader2,
+  Lock,
+  X
 } from "lucide-react";
 
 interface StaffItem {
@@ -86,6 +89,10 @@ const DEFAULT_STAFF: StaffItem[] = [
   { id: "51", name: "OMAR", role: "Driver" }
 ];
 
+const LOCAL_STORAGE_CACHE_KEY = "kva_movement_report_local_cache";
+const SERVER_AUTH_TOKEN_KEY = "kva_server_device_auth_token";
+const SERVER_SECRET_PASSWORD = "mir159";
+
 export default function MovementReportApp() {
   const [staff, setStaff] = useState<StaffItem[]>(DEFAULT_STAFF);
   const [frontPageCapacity, setFrontPageCapacity] = useState<number>(30);
@@ -95,9 +102,15 @@ export default function MovementReportApp() {
   const [newRole, setNewRole] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Server sync indicators
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  // Storage and sync feedback states
+  const [saveCacheSuccess, setSaveCacheSuccess] = useState(false);
+  const [isSavingServer, setIsSavingServer] = useState(false);
+  const [saveServerSuccess, setSaveServerSuccess] = useState(false);
+
+  // Password Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [inputPassword, setInputPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   // Undo / Redo history
   const [history, setHistory] = useState<AppSnapshot[]>([
@@ -127,31 +140,62 @@ export default function MovementReportApp() {
     setHistoryIndex(truncatedHistory.length);
   };
 
-  // Load latest state directly from server on startup
+  // Initial load: Priority to Server, fallback to Local Cache
   useEffect(() => {
-    async function loadFromServer() {
+    async function initData() {
       try {
         const res = await fetch("/api/report");
         const json = await res.json();
         if (json.success && json.data) {
-          const remote = json.data;
+          const remote: AppSnapshot = json.data;
           setStaff(remote.staff || DEFAULT_STAFF);
           setFrontPageCapacity(remote.frontPageCapacity || 30);
           setReportDay(remote.reportDay || "");
           setReportDate(remote.reportDate || "");
           setHistory([remote]);
           setHistoryIndex(0);
+          return;
         }
       } catch (err) {
-        console.warn("Could not load from server:", err);
+        // Fallback to local cache if offline or server is empty
+      }
+
+      const cached = localStorage.getItem(LOCAL_STORAGE_CACHE_KEY);
+      if (cached) {
+        try {
+          const parsed: AppSnapshot = JSON.parse(cached);
+          if (parsed.staff && Array.isArray(parsed.staff)) {
+            setStaff(parsed.staff);
+            setFrontPageCapacity(parsed.frontPageCapacity || 30);
+            setReportDay(parsed.reportDay || "");
+            setReportDate(parsed.reportDate || "");
+            setHistory([parsed]);
+            setHistoryIndex(0);
+          }
+        } catch (e) {
+          console.error("Local cache load failed:", e);
+        }
       }
     }
-    loadFromServer();
+    initData();
   }, []);
 
-  // Save latest work to server
-  const handleSaveToServer = async () => {
-    setIsSaving(true);
+  // BUTTON 1: Save in Local Cache
+  const handleSaveToCache = () => {
+    const stateToSave: AppSnapshot = {
+      staff,
+      frontPageCapacity,
+      reportDay,
+      reportDate
+    };
+    localStorage.setItem(LOCAL_STORAGE_CACHE_KEY, JSON.stringify(stateToSave));
+    setSaveCacheSuccess(true);
+    setTimeout(() => setSaveCacheSuccess(false), 2200);
+  };
+
+  // Server Save Execution Logic
+  const executeServerSave = async () => {
+    setIsSavingServer(true);
     try {
       const stateToSave: AppSnapshot = {
         staff,
@@ -166,17 +210,41 @@ export default function MovementReportApp() {
       });
       const data = await res.json();
       if (data.success) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2500);
+        setSaveServerSuccess(true);
+        setTimeout(() => setSaveServerSuccess(false), 2500);
       }
     } catch (err) {
-      console.error("Save failed:", err);
+      console.error("Failed to save on server:", err);
     } finally {
-      setIsSaving(false);
+      setIsSavingServer(false);
     }
   };
 
-  // Undo
+  // BUTTON 2: Save in Server (With One-time Device Password Check)
+  const handleSaveToServerClick = () => {
+    const isDeviceAuthorized = localStorage.getItem(SERVER_AUTH_TOKEN_KEY) === "AUTHORIZED";
+    if (isDeviceAuthorized) {
+      executeServerSave();
+    } else {
+      setPasswordError("");
+      setInputPassword("");
+      setIsPasswordModalOpen(true);
+    }
+  };
+
+  // Modal Password Verification
+  const handleVerifyPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputPassword === SERVER_SECRET_PASSWORD) {
+      localStorage.setItem(SERVER_AUTH_TOKEN_KEY, "AUTHORIZED");
+      setIsPasswordModalOpen(false);
+      executeServerSave();
+    } else {
+      setPasswordError("Incorrect password. Access denied.");
+    }
+  };
+
+  // Undo / Redo
   const handleUndo = () => {
     if (historyIndex > 0) {
       const targetIndex = historyIndex - 1;
@@ -189,7 +257,6 @@ export default function MovementReportApp() {
     }
   };
 
-  // Redo
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const targetIndex = historyIndex + 1;
@@ -202,7 +269,7 @@ export default function MovementReportApp() {
     }
   };
 
-  // Keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S)
+  // Keyboard Shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -218,7 +285,7 @@ export default function MovementReportApp() {
         handleRedo();
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        handleSaveToServer();
+        handleSaveToServerClick();
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -280,7 +347,7 @@ export default function MovementReportApp() {
     commitSnapshot(staff);
   };
 
-  // Toggle black bar
+  // Toggle solid black divider above row
   const toggleBlackBar = (id: string) => {
     const updated = staff.map((s) =>
       s.id === id ? { ...s, hasBlackBarAbove: !s.hasBlackBarAbove } : s
@@ -301,7 +368,7 @@ export default function MovementReportApp() {
   const page1Items = staff.slice(0, frontPageCapacity);
   const page2Items = staff.slice(frontPageCapacity);
 
-  // Render Table
+  // Table Renderer
   const renderTable = (items: StaffItem[], startIndex: number, isFirstPage: boolean) => (
     <table className="w-full border-collapse border-[1.5px] border-black text-[10.5px] font-sans">
       <thead>
@@ -346,7 +413,7 @@ export default function MovementReportApp() {
           </>
         )}
 
-        {/* Column Headers (Reduced Name of Person column size) */}
+        {/* Column Headers */}
         <tr className="border-b-[1.5px] border-black bg-slate-50 print:bg-transparent font-bold text-center text-black">
           <th className="no-print w-7 border-r border-black p-1">#</th>
           <th className="w-10 border-r border-black p-1">Sl. No</th>
@@ -399,10 +466,9 @@ export default function MovementReportApp() {
                   {globalIndex + 1}
                 </td>
 
-                {/* Name & Role: 2 spaces start of name, tight brackets, space on right side */}
+                {/* Name & Role: 2 non-breaking spaces start, tight brackets without inner space, space right side */}
                 <td className="border-r border-black px-1.5 py-0.5 font-semibold text-black">
                   <div className="flex items-center text-[10.5px]">
-                    {/* 2 spaces starting of name */}
                     <span className="select-none font-mono whitespace-pre">&nbsp;&nbsp;</span>
                     
                     <input
@@ -413,13 +479,11 @@ export default function MovementReportApp() {
                       className="w-full bg-transparent outline-none focus:bg-amber-100 uppercase font-semibold"
                     />
 
-                    {/* Bracket tightly touches role text, with space on the right side */}
                     {trimmedRole !== "" ? (
                       <span className="font-normal text-slate-800 print:text-black whitespace-nowrap inline-flex items-center mr-2">
                         ({trimmedRole})
                       </span>
                     ) : (
-                      /* Screen-only toggle to add a role if blank */
                       <span className="no-print opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity mr-2">
                         <input
                           type="text"
@@ -481,7 +545,7 @@ export default function MovementReportApp() {
     <div className="min-h-screen py-6 px-3 sm:px-6 max-w-5xl mx-auto">
       {/* ================= CONTROLS (NO-PRINT) ================= */}
       <div className="no-print bg-white p-5 rounded-2xl shadow-lg border border-slate-200 mb-8 space-y-4">
-        {/* Top Header & Actions */}
+        {/* Top Header & Two Save Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h1 className="text-lg font-black text-slate-800 tracking-wide uppercase flex items-center gap-2">
@@ -520,28 +584,49 @@ export default function MovementReportApp() {
               <Redo2 className="w-4 h-4" />
             </button>
 
-            {/* Save to Server Button */}
+            {/* BUTTON 1: Save in Local Cache */}
             <button
-              onClick={handleSaveToServer}
-              disabled={isSaving}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-sm ${
-                saveSuccess
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-800 hover:bg-slate-900 text-white"
+              onClick={handleSaveToCache}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition border ${
+                saveCacheSuccess
+                  ? "bg-emerald-600 border-emerald-600 text-white"
+                  : "bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-700"
               }`}
-              title="Save to server (Ctrl+S)"
+              title="Save to local browser cache"
             >
-              {isSaving ? (
+              {saveCacheSuccess ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
-                </>
-              ) : saveSuccess ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> Saved to Server!
+                  <Check className="w-3.5 h-3.5" /> Cache Saved!
                 </>
               ) : (
                 <>
-                  <Server className="w-3.5 h-3.5" /> Save
+                  <HardDrive className="w-3.5 h-3.5" /> Save Cache
+                </>
+              )}
+            </button>
+
+            {/* BUTTON 2: Save in Server (With One-Time Password Check) */}
+            <button
+              onClick={handleSaveToServerClick}
+              disabled={isSavingServer}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-sm ${
+                saveServerSuccess
+                  ? "bg-emerald-600 text-white"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+              }`}
+              title="Save directly to server database (Ctrl+S)"
+            >
+              {isSavingServer ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+                </>
+              ) : saveServerSuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Server Saved!
+                </>
+              ) : (
+                <>
+                  <Server className="w-3.5 h-3.5" /> Save Server
                 </>
               )}
             </button>
@@ -557,7 +642,7 @@ export default function MovementReportApp() {
             {/* Export */}
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow flex items-center gap-1.5 transition"
+              className="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg shadow flex items-center gap-1.5 transition"
             >
               <Printer className="w-4 h-4" /> Export A4 PDF
             </button>
@@ -654,6 +739,68 @@ export default function MovementReportApp() {
         </form>
       </div>
 
+      {/* ================= ONE-TIME PASSWORD MODAL ================= */}
+      {isPasswordModalOpen && (
+        <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <button
+              onClick={() => setIsPasswordModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-3">
+              <Lock className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-slate-800">
+              Server Access Authorization
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              This device is not yet registered. Enter the server security key once to authorize this device permanently.
+            </p>
+
+            <form onSubmit={handleVerifyPassword} className="mt-4 space-y-3">
+              <div>
+                <input
+                  type="password"
+                  placeholder="Enter Password"
+                  value={inputPassword}
+                  onChange={(e) => {
+                    setInputPassword(e.target.value);
+                    setPasswordError("");
+                  }}
+                  autoFocus
+                  className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono tracking-wider"
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-xs font-semibold mt-1">
+                    {passwordError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="flex-1 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow transition"
+                >
+                  Authorize & Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ================= PRINTABLE DOCUMENT ================= */}
       <div className="space-y-10 print:space-y-0">
         
@@ -680,7 +827,7 @@ export default function MovementReportApp() {
           </div>
         </section>
 
-        {/* ================= PAGE 2 ================= */}
+        {/* ================= PAGE 2 (CONT.) ================= */}
         {page2Items.length > 0 && (
           <section className="print-page bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-300 print:shadow-none print:border-none print:p-0">
             {/* Directly begins with column headers */}
