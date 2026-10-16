@@ -468,7 +468,7 @@ export default function MovementReportApp() {
 
                 {/* Name & Role: 2 non-breaking spaces start, tight brackets without inner space, space right side */}
                 <td className="border-r border-black px-1.5 py-0.5 font-semibold text-black">
-                  <div className="flex items-center text-[10.5px]">
+                  <div className="flex items-center text-[15.5px]">
                     <span className="select-none font-mono whitespace-pre">&nbsp;&nbsp;</span>
                     
                     <input
